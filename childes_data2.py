@@ -13,15 +13,13 @@ import nltk
 from nltk.corpus.reader import CHILDESCorpusReader
 from nltk.corpus import brown
 from nltk.tag import tnt
-from ngram import NgramModel
-#from random import shuffle
+# from random import shuffle
+import pandas as pd
 import numpy as np
 import json
-import csv
 import os
 import itertools
 import string
-from copy import deepcopy
 
 
 # =============================================================================
@@ -42,7 +40,7 @@ class CHILDESdata:
             self.X = json.load(x_data)
             self.Y = json.load(y_data)
             self.list_of_corpora = ['Conti4', 'ENNI', 'Gillam', 'EG']
-            self.len_of_corpora = [19, 99, 77, 300, 149, 395]  # Hard coded
+            self.len_of_corpora = [19, 99, 77, 300, 171, 497]  # Hard coded
         else:
             self.X = []  # Where the features will go as list of lists
             self.Y = []  # Index corresponds to the label (SLI or TD)
@@ -179,186 +177,139 @@ class CHILDESdata:
         examiner_TNW = self.get_examiner_TNW()
         total_syl, average_syl = self.get_total_av_syl()
         f_k = self.get_flesch_kincaid(child_TNW, child_TNS, total_syl)
-        raw_to_inflected_verbs = self.raw_2_inflected_v()
+        r_2_i_verbs = self.raw_2_inflected_v()
         num_pos_tags = self.get_n_pos_tags()
         n_dos = self.get_n_dos()
         n_v, n_aux, n_3s_v, det_n_pl, det_pl_n, pro_aux, pro_3s_v, \
             total_error = self.get_error_rates()
         fillers = self.get_n_fillers()
 
-        # Read main features from CSVs (loads all the corpus precomputed data)
+        # Read in the CSV file as a Pandas Dataframe
         try:
-            all_corpus = open('final.csv', newline='')
+            df_all_corpus = pd.read_csv('final_all_ages.csv')
         except IOError:
             print('Cannot open one of the CSV files')
 
-        # Make the CSV reader
-        pre_comp_reader = csv.DictReader(all_corpus, delimiter=',')
-
         # Read the precomputed values from the CSV
-        total_utts = []  # Total of utterances
-        mlu_utts = []  # Mean length of utterances
-        mlu_words = []  # MLU in words
-        mlu_morphemes = []  # MLU in morphemes
-        mlu100_utts = []  # MLU of first 100 utterances
-        freq_types = []  # Total word types
-        freq_tokens = []  # Total word tokens
-        freq_ttr = []  # Type/token ratio
-        ndw_100 = []  # Number of different words in first 100 words
-        vocd_d_opt_av = []  # Measures vocab complexity
-        verb_utt = []  # Verbs per utterance
-        td_utts = []  # Total number of utterances
-        word_errors = []  # Number of words involved in errors
-        retracing = []  # Number of retracings
-        repetition = []  # Number of reptitions
-        dss_utts = []  # Number of DSS-eligible utterances
-        dss = []  # Developmental Sentence Score
-        ipsyn_utts = []  # Number of utterances for IPSYN
-        ipsyn_total = []  # Evaluates grammatical complexity
-        mor_words = []  # Number of words according to the %mor tier
-        # Brown's 14 grammatical morphemes
-        present_progressive = []
-        propositions_in = []
-        propositions_on = []
-        plural_s = []
-        irregular_past_tense = []
-        possessive_s = []
-        uncontractible_copula = []
-        articles = []
-        regular_past_ed = []
-        regular_3rd_person_s = []
-        irregular_3rd_person = []
-        uncontractible_aux = []
-        contractible_copula = []
-        contractible_aux = []
-
-        for row in pre_comp_reader:
-            # Check if corpus is in the list to compute
-            if row['Corpus'] in self.list_of_corpora:
-                total_utts.append(float(row['Total Utts']))
-                mlu_utts.append(float(row['MLU Utts']))
-                mlu_words.append(float(row['MLU Words']))
-                mlu_morphemes.append(float(row['MLU Morphemes']))
-                mlu100_utts.append(float(row['MLU100 Utts']))
-                freq_types.append(float(row['FREQ types']))
-                freq_tokens.append(float(row['FREQ tokens']))
-                freq_ttr.append(float(row['FREQ TTR']))
-                if row['Corpus'] == 'Gillam' and row['NDW/100'] == 'N/A':
-                    fileid = row['File/DB']
-                    fileid = fileid[:-3] + 'xml'
-                    if row['Group'] == 'SLI':
-                        fileid = 'SLI/Gillam/' + fileid
-                        file_words = self.corpora[4].words(fileid)
-                    else:
-                        fileid = 'TD/Gillam/' + fileid
-                        file_words = self.corpora[5].words(fileid)
-                    ndw_100.append(self.get_ndw_approx(file_words))
-                else:
-                    ndw_100.append(float(row['NDW/100']))
-                vocd_d_opt_av.append(float(row['VOCD D_optimum_average']))
-                verb_utt.append(float(row['Verbs/Utt']))
-                td_utts.append(float(row['TD Utts']))
-                word_errors.append(float(row['Word Errors']))
-                retracing.append(float(row['retracing[//]']))
-                repetition.append(float(row['repetition[/]']))
-                dss_utts.append(float(row['DSS Utts']))
-                dss.append(float(row['DSS']))
-                ipsyn_utts.append(float(row['IPSyn Utts']))
-                ipsyn_total.append(float(row['IPSyn Total']))
-                mor_words.append(float(row['mor Words']))
-                # Brown's 14 grammatical morphemes)
-                present_progressive.append(float(row['*-PRESP']))
-                propositions_in.append(float(row['in']))
-                propositions_on.append(float(row['on']))
-                plural_s.append(float(row['*-PL']))
-                irregular_past_tense.append(float(row['*&PAST']))
-                possessive_s.append(float(row['~poss|*']))
-                uncontractible_copula.append(float(row['cop|*']))
-                articles.append(float(row['det']))
-                regular_past_ed.append(float(row['*-PAST']))
-                regular_3rd_person_s.append(float(row['*-3S']))
-                irregular_3rd_person.append(float(row['*&3S']))
-                uncontractible_aux.append(float(row['aux|*']))
-                contractible_copula.append(float(row['~cop|*']))
-                contractible_aux.append(float(row['~aux|*']))
+        # [df_all_corpus[feature].tolist() \
+        # for feature in list(df_all_corpus.columns.values)]
+        mlu_words = df_all_corpus['MLU Words'].tolist()
+        mlu_morphemes = df_all_corpus['MLU Morphemes'].tolist()
+        mlu100_utts = df_all_corpus['MLU100 Utts'].tolist()
+        freq_ttr = df_all_corpus['FREQ TTR'].tolist()  # Type/token ratio
+        # vocd_d_opt_av = df_all_corpus['VOCD D_optimum_average'].tolist()
+        verb_utt = df_all_corpus['Verbs/Utt'].tolist()  # Verbs per utterance
+        td_utts = df_all_corpus['TD Utts'].tolist()  # Verbs per utterance
+        word_errors = df_all_corpus['Word Errors'].tolist()
+        retracing = df_all_corpus['retracing[//]'].tolist()
+        repetition = df_all_corpus['repetition[/]'].tolist()
+        dss = df_all_corpus['DSS'].tolist()  # Developmental Sentence Score
+        ipsyn_total = df_all_corpus['IPSyn Total'].tolist()
+        mor_words = df_all_corpus['mor Words'].tolist()
+        # Browns grammatical morphemes
+        present_progressive = df_all_corpus['*-PRESP'].tolist()
+        propositions_in = df_all_corpus['in'].tolist()
+        propositions_on = df_all_corpus['on'].tolist()
+        plural_s = df_all_corpus['*-PL'].tolist()
+        irregular_past_tense = df_all_corpus['*&PAST'].tolist()
+        possessive_s = df_all_corpus['~poss|*'].tolist()
+        uncontractible_copula = df_all_corpus['cop|*'].tolist()
+        articles = df_all_corpus['det'].tolist()
+        regular_past_ed = df_all_corpus['*-PAST'].tolist()
+        regular_3rd_person_s = df_all_corpus['*-3S'].tolist()
+        irregular_3rd_person = df_all_corpus['*&3S'].tolist()
+        uncontractible_aux = df_all_corpus['aux|*'].tolist()
+        contractible_copula = df_all_corpus['~cop|*'].tolist()
+        contractible_aux = df_all_corpus['~aux|*'].tolist()
+        # n-gram probabilities
+        s_1g_log = df_all_corpus['s-1-log'].tolist()
+        s_1g_ppl = df_all_corpus['s-1-ppl'].tolist()
+        s_1g_ppl2 = df_all_corpus['s-1-ppl2'].tolist()
+        s_2g_log = df_all_corpus['s-2-log'].tolist()
+        s_2g_ppl = df_all_corpus['s-2-ppl'].tolist()
+        s_2g_ppl2 = df_all_corpus['s-2-ppl2'].tolist()
+        s_3g_log = df_all_corpus['s-3-log'].tolist()
+        s_3g_ppl = df_all_corpus['s-3-ppl'].tolist()
+        s_3g_ppl2 = df_all_corpus['s-3-ppl2'].tolist()
+        d_1g_log = df_all_corpus['d-1-log'].tolist()
+        d_1g_ppl = df_all_corpus['d-1-ppl'].tolist()
+        d_1g_ppl2 = df_all_corpus['d-1-ppl2'].tolist()
+        d_2g_log = df_all_corpus['d-2-log'].tolist()
+        d_2g_ppl = df_all_corpus['d-2-ppl'].tolist()
+        d_2g_ppl2 = df_all_corpus['d-2-ppl2'].tolist()
+        d_3g_log = df_all_corpus['d-3-log'].tolist()
+        d_3g_ppl = df_all_corpus['d-3-ppl'].tolist()
+        d_3g_ppl2 = df_all_corpus['d-3-ppl2'].tolist()
 
         # Make the features that need this data
-        z_mlu_sli, z_mlu_td, z_ndw_sli, z_ndw_td, z_ipsyn_sli, z_ipsyn_td, \
+        z_mlu_sli, z_mlu_td, z_we_sli, z_we_td, z_r2v_sli, z_r2v_td, \
             z_utts_sli, z_utts_td = self.get_standard_scores(mlu_words,
-                                                             ndw_100,
-                                                             ipsyn_total,
+                                                             word_errors,
+                                                             r_2_i_verbs,
                                                              td_utts)
         # LM probabilities
+        '''
         try:
-            lms = open("lms_out.txt", "r")
+        lms = open("lms_out.txt", "r")
         except IOError:
-            print('Could not open lms file')
+        print('Could not open lms file')
         lms_list = json.load(lms)
+        '''
 
-        # This is a list of perplexity values for 1-4 gram SLI and TD
-        # Only works for testing an individual corpus (all not computed)
-        sli_1_gram = lms_list[0]
-        sli_2_gram = lms_list[1]
-        sli_3_gram = lms_list[2]
-        sli_4_gram = lms_list[3]
-        td_1_gram = lms_list[4]
-        td_2_gram = lms_list[5]
-        td_3_gram = lms_list[6]
-        td_4_gram = lms_list[7]
+        f_labels = [child_TNW, child_TNS, examiner_TNW, freq_ttr, r_2_i_verbs,
+                    mor_words, num_pos_tags, n_dos, repetition, retracing,
+                    fillers, s_1g_log, s_2g_log, s_3g_log, d_1g_log, d_2g_log,
+                    d_3g_log, z_mlu_sli,
+                    z_mlu_td, z_we_sli, z_we_td, z_r2v_sli, z_r2v_td,
+                    z_utts_sli, z_utts_td, total_syl, average_syl, mlu_words,
+                    mlu_morphemes, mlu100_utts, verb_utt, dss, ipsyn_total,
+                    present_progressive, propositions_in, propositions_on,
+                    plural_s, irregular_past_tense, possessive_s,
+                    uncontractible_copula, articles, regular_past_ed,
+                    regular_3rd_person_s, irregular_3rd_person,
+                    uncontractible_aux, contractible_copula, contractible_aux,
+                    word_errors, f_k, n_v, n_aux, n_3s_v, det_n_pl, det_pl_n,
+                    pro_aux, pro_3s_v, total_error]
 
         # Add the features to X
         # GROUP 1: Language Productivity
         self.X.append(child_TNW)
         self.X.append(child_TNS)
         self.X.append(examiner_TNW)
-        self.X.append(freq_types)
-        self.X.append(freq_tokens)
         self.X.append(freq_ttr)
         # GROUP 2: Morphosyntactic skills
-        self.X.append(raw_to_inflected_verbs)
-        self.X.append(vocd_d_opt_av)
+        self.X.append(r_2_i_verbs)
         self.X.append(mor_words)
         self.X.append(num_pos_tags)
         self.X.append(n_dos)
-        # GROUP 3: Vocabulary knowledge
-        self.X.append(ndw_100)
         # GROUP 4: Speech fluency
         self.X.append(repetition)
         self.X.append(retracing)
         self.X.append(fillers)
-        '''
         # GROUP 5: Probabilities from LMs
-        self.X.append(sli_1_gram)
-        self.X.append(sli_2_gram)
-        self.X.append(sli_3_gram)
-        self.X.append(sli_4_gram)
-        self.X.append(td_1_gram)
-        self.X.append(td_2_gram)
-        self.X.append(td_3_gram)
-        self.X.append(td_4_gram)
-        '''
+        self.X.append(s_1g_log)
+        self.X.append(s_2g_log)
+        self.X.append(s_3g_log)
+        self.X.append(d_1g_log)
+        self.X.append(d_2g_log)
+        self.X.append(d_3g_log)
         # GROUP 6: Standard scores
         self.X.append(z_mlu_sli)
         self.X.append(z_mlu_td)
-        self.X.append(z_ndw_sli)
-        self.X.append(z_ndw_td)
-        self.X.append(z_ipsyn_sli)
-        self.X.append(z_ipsyn_td)
+        self.X.append(z_we_sli)
+        self.X.append(z_we_td)
+        self.X.append(z_r2v_sli)
+        self.X.append(z_r2v_td)
         self.X.append(z_utts_sli)
         self.X.append(z_utts_td)
         # GROUP 7: Sentence complexity
         self.X.append(total_syl)
         self.X.append(average_syl)
-        self.X.append(total_utts)
-        self.X.append(mlu_utts)
         self.X.append(mlu_words)
         self.X.append(mlu_morphemes)
         self.X.append(mlu100_utts)
         self.X.append(verb_utt)
-        self.X.append(td_utts)
-        self.X.append(dss_utts)
         self.X.append(dss)
-        self.X.append(ipsyn_utts)
         self.X.append(ipsyn_total)
         self.X.append(present_progressive)
         self.X.append(propositions_in)
@@ -386,19 +337,36 @@ class CHILDESdata:
         self.X.append(pro_3s_v)
         self.X.append(total_error)
 
-        # Serialize self.X
+        '''
+        Garbage features
+
+        self.X.append(vocd_d_opt_av)
+        self.X.append(ndw_100)
+        self.X.append(s_1g_ppl)
+        self.X.append(s_1g_ppl2)
+        self.X.append(s_3g_ppl)
+        self.X.append(total_utts)
+        self.X.append(mlu_utts)
+        self.X.append(s_3g_ppl2)
+        self.X.append(s_2g_ppl)
+        self.X.append(s_2g_ppl2)
+        self.X.append(d_2g_ppl)
+        self.X.append(ipsyn_utts)
+        self.X.append(d_2g_ppl2)
+        self.X.append(d_1g_ppl)
+        self.X.append(d_1g_ppl2)
+        self.X.append(d_3g_ppl)
+        self.X.append(td_utts)
+        self.X.append(dss_utts)
+        self.X.append(d_3g_ppl2)
+        '''
+
+         Serialize self.X
         try:
             x_outfile = open("x.txt", "w")
         except IOError:
             print('Could not open x file')
         json.dump(self.X, x_outfile, ensure_ascii=False)
-
-    def create_lm_models(self, corpus):
-        n_gram_lm = []
-        flat_corpus = list(itertools.chain.from_iterable(corpus))
-        for i in range(1, 5):
-            n_gram_lm.append(NgramModel(i, flat_corpus))
-        return n_gram_lm
 
     def only_pos_tags(self):
         pos_corpora = []
@@ -414,52 +382,6 @@ class CHILDESdata:
                 tag_corpus.append(pos_transcript)
             pos_corpora.append(tag_corpus)
         return pos_corpora
-
-    def get_lm_prob(self):
-        sli_1_gram = []
-        sli_2_gram = []
-        sli_3_gram = []
-        sli_4_gram = []
-        td_1_gram = []
-        td_2_gram = []
-        td_3_gram = []
-        td_4_gram = []
-        # Get the POS tags for the LMS
-        pos_corpora = self.only_pos_tags()
-        for corpus in pos_corpora:
-            j = 0  # Corpus index
-            sli_or_td = 1
-            for i in range(0, len(corpus)):  # for each transcript
-                # Remove the transcript from the LM
-                transcript = corpus[j]
-                corpus_copy = deepcopy(corpus)
-                del corpus_copy[i]
-                # Get the LM models for each
-                if sli_or_td % 2 == 1:  # Is SLI
-                    sli_lms = self.create_lm_models(corpus_copy)
-                    td_lms = self.create_lm_models(pos_corpora[j+1])
-                else:  # Is TD
-                    sli_lms = self.create_lm_models(pos_corpora[j-1])
-                    td_lms = self.create_lm_models(corpus_copy)
-                # Flatten the transcript
-                f_transcript = list(itertools.chain.from_iterable(transcript))
-                # Compute the perplexity of the transcript
-                sli_1_gram.append(sli_lms[0].perplexity(f_transcript))
-                sli_2_gram.append(sli_lms[1].perplexity(f_transcript))
-                sli_3_gram.append(sli_lms[2].perplexity(f_transcript))
-                sli_4_gram.append(sli_lms[3].perplexity(f_transcript))
-                td_1_gram.append(td_lms[0].perplexity(f_transcript))
-                td_2_gram.append(td_lms[1].perplexity(f_transcript))
-                td_3_gram.append(td_lms[2].perplexity(f_transcript))
-                td_4_gram.append(td_lms[3].perplexity(f_transcript))
-        prob_out = [sli_1_gram, sli_2_gram, sli_3_gram, sli_4_gram, td_1_gram,
-                    td_2_gram, td_3_gram, td_4_gram]
-        try:
-            lms_out = open("lms_out.txt", "w")
-        except IOError:
-            print('Could not open lms data file')
-        json.dump(prob_out, lms_out, ensure_ascii=False)
-        return prob_out
 
     def get_n_fillers(self):
         # Get a list of fillers from searching the word database
@@ -508,7 +430,7 @@ class CHILDESdata:
         '''
         Returns the z_scores both TD and SLI for a feature given to it
         Arguments:
-            feature - A feature as a list of values
+        feature - A feature as a list of values
         '''
         # Since these are flat lists the numbers of transcripts in each corpus
         # have to be defined in order to distinguish the groups
@@ -571,13 +493,13 @@ class CHILDESdata:
     def get_error_rates(self):
         '''
         Calculates error rates based on the following bigram pos tags
-            - Noun-verb
-            - Noun-auxillary verb
-            - Noun-3rd person verb
-            - Determiner-plural noun
-            - Plural determiner-noun
-            - Personal pronoun-3rd person verb
-            - Personal pronoun-auxilliary verb
+        - Noun-verb
+        - Noun-auxillary verb
+        - Noun-3rd person verb
+        - Determiner-plural noun
+        - Plural determiner-noun
+        - Personal pronoun-3rd person verb
+        - Personal pronoun-auxilliary verb
         '''
         per_pronouns = ['PRP', 'PPSS', 'PP$', 'PP$$', 'PPL', 'PPLS', 'PPO']
         auxillary_verbs = ['DO', 'HV', 'MD', 'DOD', 'BEZ', 'BED']
@@ -723,7 +645,7 @@ class CHILDESdata:
         https://www.howmanysyllables.com/howtocountsyllables
         It's not perfect but it's a decent appoximation
         Arguments:
-            word - The word to count the number of syllables in
+        word - The word to count the number of syllables in
         '''
         vowels = ['a', 'e', 'i', 'o', 'u', 'y']
         diphongs = ['ea', 'ee', 'ai', 'ei', 'ou', 'oo', 'oi', 'ay', 'ey',
@@ -772,9 +694,9 @@ class CHILDESdata:
                     and word_chars[-2] == 'e'and word_chars[-3] == 'l':
                 if word_chars[-4] in vowels:
                     num_vowels -= 1
-            elif word_chars[-1] == 'l' and word_chars[-2] == 'e':
-                if word_chars[-3] in vowels:
-                    num_vowels -= 1
+                elif word_chars[-1] == 'l' and word_chars[-2] == 'e':
+                    if word_chars[-3] in vowels:
+                        num_vowels -= 1
         # remove silent e
         elif len(word_chars) > 1 and word_chars[-1] == 'e':
             num_vowels -= 1
@@ -808,10 +730,10 @@ class CHILDESdata:
         approximate grade level the child would need to be to understand
         the text
         Arguments:
-            total_words - List of total number of words used in each transcript
-            total_sents - List of total number of sents used in each transcript
-            total_syl   - List of total number of syllables used in each
-            transcript
+        total_words - List of total number of words used in each transcript
+        total_sents - List of total number of sents used in each transcript
+        total_syl   - List of total number of syllables used in each
+        transcript
         '''
         flesch_kincaid = []
         for i in range(0, len(total_words)):
@@ -860,8 +782,8 @@ class CHILDESdata:
         Returns a list of n tuples corresponding to n-grams using iterables
         zip library
         Arguments:
-            n - Corresponds to the length of the n gram to be created
-            bag_of_words - Is a list of the words used by a single child
+        n - Corresponds to the length of the n gram to be created
+        bag_of_words - Is a list of the words used by a single child
         '''
         return zip(*[bag_of_words[i:] for i in range(n)])
 
@@ -897,33 +819,34 @@ class CHILDESdata:
 if __name__ == '__main__':
     childes = CHILDESdata()
     childes.make_dataset()
+    childes.make_y()
     '''def train_LMS(self, corpus, n_gram):
 
-        Returns the perplexity of a LM model based off the corpus given to it.
-        and length of the n-gram to compute
+    Returns the perplexity of a LM model based off the corpus given to it.
+    and length of the n-gram to compute
 
-        Arguments:
-            corpus - The entire set of transcripts from a corpus (SLI and TD)
-            n_gram - The n-gram to compute
+    Arguments:
+    corpus - The entire set of transcripts from a corpus (SLI and TD)
+    n_gram - The n-gram to compute
 
-        lms = []
-        test_set = []
-        # Split the corpus based on SLI or TD
-        for group in corpus:
-            # Organized by age so shuffle the list for a even spread on the
-            # cut
-            shuffle(group)
+    lms = []
+    test_set = []
+    # Split the corpus based on SLI or TD
+    for group in corpus:
+    # Organized by age so shuffle the list for a even spread on the
+    # cut
+    shuffle(group)
 
-            # Train on 80% f the corpus and test on the rest
-            spl = 80*len(group)/100
-            train = group[:spl]
-            test = group[spl:]
-            test_set.append(test)
+    # Train on 80% f the corpus and test on the rest
+    spl = 80*len(group)/100
+    train = group[:spl]
+    test = group[spl:]
+    test_set.append(test)
 
-            # Create the LM
-            fdist = nltk.FreqDist(w for w in train)
-            estimator = WittenBellProbDist(fdist, 0.2)
-            lm = NgramModel(n_gram, train, estimator=estimator)
-            lms.append(lm)
-            return lms, test_set
-      '''
+    # Create the LM
+    fdist = nltk.FreqDist(w for w in train)
+    estimator = WittenBellProbDist(fdist, 0.2)
+    lm = NgramModel(n_gram, train, estimator=estimator)
+    lms.append(lm)
+    return lms, test_set
+'''
