@@ -1,6 +1,6 @@
 # Setup
 title:        Diagnosing Language Delays in Children Automatically
-tagline:      A ML Project using data from the CHILDES Talkbank
+tagline:      A machine learning project using data from the CHILDES Talkbank
 baseurl:      ""
 paginate:     1
 
