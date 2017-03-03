@@ -15,4 +15,7 @@ gems:
 
 #Others
 markdown: kramdown
+<<<<<<< HEAD
+=======
 theme: jekyll-theme-cayman
+>>>>>>> 7cdd399a5f9618cb48568b2fef4c092b3dc31a93
