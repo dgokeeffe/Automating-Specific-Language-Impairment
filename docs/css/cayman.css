@@ -190,3 +190,21 @@ a:hover { text-decoration: underline; }
 .site-footer-owner { display: block; font-weight: bold; }
 
 .site-footer-credits { color: #819198; }
+
+.center-image {
+  margin: 0 auto;
+  display: block;
+}
+
+/* CSS for creating a caption*/
+.image-wrapper {
+  text-align: center;
+
+  .image-caption {
+    color: $grey-color;
+    margin-top: $spacing-unit / 3;
+  }
+}
+
+/* To hack together a caption tag */
+img + em { }
