@@ -35,7 +35,7 @@ Firstly, the [Conti-Ramsden 4](https://www.ncbi.nlm.nih.gov/pubmed/17729147) cor
 
 
 {% include image.html
-           img="assets/mlu_age.png"
+           img="../assets/mlu_age.png"
            title="mlu_morphemes by age"
            caption="Figure 1: Mean Length of Utterances (MLU) in Morphemes (a measure of linguistic productivity) increases with age for both Specific Language Impaired (SLI) and Typically Developing (TD) children over all three corpora" %}
 
@@ -44,6 +44,7 @@ Secondly, there were several more features available simply through the KIDEVAL 
 Lastly, they trained their [part-of-speech tagger](https://en.wikipedia.org/wiki/Part-of-speech_tagging) on the Switchboard Corpus. I thought it was a little abstract since these narratives typically were one sided conversations. The [Brown Corpus](https://en.wikipedia.org/wiki/Brown_Corpus) offers a much more thorough tagset in regards to verbs thus it might be better at classifying the grammar of each word correctly.
 
 ## Using the features to gain some insights into the nature of SLI
+As 
 
 
 
