@@ -8,7 +8,7 @@ exclude: ['README.md']
 # About/contact
 author:       
   name:       David O'Keeffe
-  url:        http://dgokeeffe.github.io
+  url:        http://dgokeeffe.github.io/SLI-ML
 
 # Gems
 gems:
