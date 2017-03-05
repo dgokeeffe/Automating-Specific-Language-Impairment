@@ -35,7 +35,7 @@ Firstly, the [Conti-Ramsden 4](https://www.ncbi.nlm.nih.gov/pubmed/17729147) cor
 
 
 {% include image.html
-           img="../assets/mlu_age.png"
+           img="docs/assets/mlu_age.png"
            title="mlu_morphemes by age"
            caption="Figure 1: Mean Length of Utterances (MLU) in Morphemes (a measure of linguistic productivity) increases with age for both Specific Language Impaired (SLI) and Typically Developing (TD) children over all three corpora" %}
 
