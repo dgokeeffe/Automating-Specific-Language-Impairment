@@ -11,6 +11,7 @@ Author: David O'Keeffe
 
 from childes_data2 import CHILDESdata
 from sklearn.utils import shuffle
+from run_classifiers import loocv_lpocv
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -112,3 +113,4 @@ if __name__ == '__main__':
         baselinewriter.writerow([save_png, base_f1])
         scorewriter.writerow([save_png, base_f1])
         scores.to_csv(scsvfile, mode='a')
+    extract_features()
