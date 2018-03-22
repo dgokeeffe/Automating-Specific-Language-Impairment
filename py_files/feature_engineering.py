@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 
-childes_data
+feature_engineering
 ~~~~~~~~~~~~~~~
 
 Creates a class that holds all the CHILDES data from the ENNI and the
